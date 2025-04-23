@@ -51,13 +51,4 @@ export class VoAgentController {
   ) {
     return this.voAgentService.uploadKnowledgeFile(id, file);
   }
-
-  @Post(':id/upload-url')
-  // eslint-disable-next-line prettier/prettier
-  async uploadKnowledgeUrl(
-    @Param('id') id: string,
-    @Body('url') url: string,
-  ) {
-    return this.voAgentService.uploadKnowledgeUrl(id, url);
-  }
 }
