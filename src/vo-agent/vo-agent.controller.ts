@@ -6,7 +6,10 @@ import {
   Delete,
   Body,
   Param,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { VoAgentService } from './vo-agent.service';
 import { CreateVOAgentDto } from './dto/create-vo-agent.dto';
 import { UpdateVOAgentDto } from './dto/update-vo-agent.dto';
@@ -38,5 +41,23 @@ export class VoAgentController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.voAgentService.remove(id);
+  }
+
+  @Post(':id/upload-file')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadKnowledgeFile(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.voAgentService.uploadKnowledgeFile(id, file);
+  }
+
+  @Post(':id/upload-url')
+  // eslint-disable-next-line prettier/prettier
+  async uploadKnowledgeUrl(
+    @Param('id') id: string,
+    @Body('url') url: string,
+  ) {
+    return this.voAgentService.uploadKnowledgeUrl(id, url);
   }
 }

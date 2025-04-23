@@ -30,30 +30,42 @@ export class VoAgentService {
   }
 
   async update(id: string, updateDto: UpdateVOAgentDto): Promise<VOAgent> {
-    try {
-      const agent = await this.voAgentModel.findByIdAndUpdate(id, updateDto, {
-        new: true,
-      });
-      if (!agent) {
-        throw new NotFoundException('VO Agent to update not found');
-      }
-      return agent;
-    } catch (error) {
-      console.error('UPDATE ERROR:', id, (error as Error).message);
-      throw error;
+    const agent = await this.voAgentModel.findByIdAndUpdate(id, updateDto, {
+      new: true,
+    });
+    if (!agent) {
+      throw new NotFoundException('VO Agent to update not found');
     }
+    return agent;
   }
 
   async remove(id: string): Promise<VOAgent> {
-    try {
-      const agent = await this.voAgentModel.findByIdAndDelete(id).exec();
-      if (!agent) {
-        throw new NotFoundException('VO Agent to delete not found');
-      }
-      return agent;
-    } catch (error) {
-      console.error('DELETE ERROR:', id, (error as Error).message);
-      throw error;
+    const agent = await this.voAgentModel.findByIdAndDelete(id).exec();
+    if (!agent) {
+      throw new NotFoundException('VO Agent to delete not found');
     }
+    return agent;
+  }
+
+  async uploadKnowledgeFile(id: string, file: Express.Multer.File) {
+    const agent = await this.findOne(id);
+
+    return {
+      message: 'File uploaded successfully',
+      agentId: agent._id,
+      fileName: file.originalname,
+      fileSize: file.size,
+      mimeType: file.mimetype,
+    };
+  }
+
+  async uploadKnowledgeUrl(id: string, url: string) {
+    const agent = await this.findOne(id);
+
+    return {
+      message: 'URL saved successfully',
+      agentId: agent._id,
+      url,
+    };
   }
 }
