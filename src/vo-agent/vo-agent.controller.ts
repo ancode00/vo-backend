@@ -43,6 +43,7 @@ export class VoAgentController {
     return this.voAgentService.remove(id);
   }
 
+  // ✅ Upload PDF/Word File
   @Post(':id/upload-file')
   @UseInterceptors(FileInterceptor('file'))
   async uploadKnowledgeFile(
@@ -50,5 +51,15 @@ export class VoAgentController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.voAgentService.uploadKnowledgeFile(id, file);
+  }
+
+  // ✅ Upload KB from a Web URL
+  @Post(':id/upload-url')
+  // eslint-disable-next-line prettier/prettier
+  async uploadKnowledgeUrl(
+    @Param('id') id: string,
+    @Body('url') url: string,
+  ) {
+    return this.voAgentService.uploadKnowledgeUrl(id, url);
   }
 }
