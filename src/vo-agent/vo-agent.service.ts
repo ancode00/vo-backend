@@ -30,20 +30,30 @@ export class VoAgentService {
   }
 
   async update(id: string, updateDto: UpdateVOAgentDto): Promise<VOAgent> {
-    const agent = await this.voAgentModel.findByIdAndUpdate(id, updateDto, {
-      new: true,
-    });
-    if (!agent) {
-      throw new NotFoundException('VO Agent to update not found');
+    try {
+      const agent = await this.voAgentModel.findByIdAndUpdate(id, updateDto, {
+        new: true,
+      });
+      if (!agent) {
+        throw new NotFoundException('VO Agent to update not found');
+      }
+      return agent;
+    } catch (error) {
+      console.error('UPDATE ERROR:', id, (error as Error).message);
+      throw error;
     }
-    return agent;
   }
 
   async remove(id: string): Promise<VOAgent> {
-    const agent = await this.voAgentModel.findByIdAndDelete(id).exec();
-    if (!agent) {
-      throw new NotFoundException('VO Agent to delete not found');
+    try {
+      const agent = await this.voAgentModel.findByIdAndDelete(id).exec();
+      if (!agent) {
+        throw new NotFoundException('VO Agent to delete not found');
+      }
+      return agent;
+    } catch (error) {
+      console.error('DELETE ERROR:', id, (error as Error).message);
+      throw error;
     }
-    return agent;
   }
 }
