@@ -50,6 +50,7 @@ export class VoAgentController {
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
+    if (!file) throw new Error('No file uploaded');
     return this.voAgentService.uploadKnowledgeFile(id, file);
   }
 
