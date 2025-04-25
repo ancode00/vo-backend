@@ -19,7 +19,7 @@ export class VoAgentController {
   constructor(private readonly voAgentService: VoAgentService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('knowledgeBaseData'))
   create(
     @UploadedFile() file: Express.Multer.File,
     @Body() createDto: CreateVOAgentDto,
