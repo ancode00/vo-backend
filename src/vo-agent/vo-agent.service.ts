@@ -18,12 +18,50 @@ export class VoAgentService {
     @InjectModel(VOAgent.name, 'mainConnection')
     private readonly voAgentModel: Model<VOAgent>,
   ) {}
+  async processKnowledgeFile(file: Express.Multer.File): Promise<{
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+    localPath: string;
+    parsedData: string[];
+  }> {
+    const uploadDir = path.join(__dirname, '../../uploads');
+    await fs.promises.mkdir(uploadDir, { recursive: true });
 
-  async create(createDto: CreateVOAgentDto): Promise<VOAgent> {
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname);
+    const base = path.basename(file.originalname, ext);
+    const fileName = `${base}-${timestamp}${ext}`;
+    const savePath = path.join(uploadDir, fileName);
+
+    await fs.promises.writeFile(savePath, file.buffer);
+
+    // For now, treat buffer as plain text. You can use `pdf-parse`, `mammoth`, etc. to enhance later.
+    const parsedData = file.buffer
+      .toString('utf-8')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    return {
+      fileName,
+      fileSize: file.size,
+      mimeType: file.mimetype,
+      localPath: savePath,
+      parsedData,
+    };
+  }
+  async create(
+    createDto: CreateVOAgentDto,
+    file?: Express.Multer.File,
+  ): Promise<VOAgent> {
+    if (file) {
+      const kb = await this.processKnowledgeFile(file);
+      createDto.knowledgeBase = kb.localPath;
+      createDto.knowledgeBaseData = kb.parsedData;
+    }
     const agent = new this.voAgentModel(createDto);
     return await agent.save();
   }
-
   async findAll(): Promise<VOAgent[]> {
     return await this.voAgentModel.find().exec();
   }
