@@ -47,24 +47,19 @@ export class VoAgentController {
     return this.voAgentService.remove(id);
   }
 
-  // ✅ Upload PDF/Word File
-  @Post(':id/upload-file')
+  // Upload PDF/Word File + Create Agent
+  @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadKnowledgeFile(
-    @Param('id') id: string,
+  async createWithFile(
     @UploadedFile() file: Express.Multer.File,
+    @Body() createDto: CreateVOAgentDto,
   ) {
-    if (!file) throw new Error('No file uploaded');
-    return this.voAgentService.uploadKnowledgeFile(id, file);
+    return this.voAgentService.create(createDto, file);
   }
 
-  // ✅ Upload KB from a Web URL
-  @Post(':id/upload-url')
-  // eslint-disable-next-line prettier/prettier
-  async uploadKnowledgeUrl(
-    @Param('id') id: string,
-    @Body('url') url: string,
-  ) {
-    return this.voAgentService.uploadKnowledgeUrl(id, url);
+  // Upload KB from URL + Create Agent
+  @Post('url')
+  async createWithUrl(@Body() createDto: CreateVOAgentDto) {
+    return this.voAgentService.create(createDto);
   }
 }
