@@ -48,9 +48,9 @@ export class VoAgentController {
   }
 
   // ✨ Added /voice-style here BEFORE ":id"
-  @Get('voice-style')
-  async getVoiceStyles() {
-    return this.voAgentService.getVoiceStylesAndVoices();
+  @Get('voice-config')
+  async getVoiceConfig() {
+    return this.voAgentService.getVoiceConfig();
   }
 
   // 🛑 This has to come at the end!
