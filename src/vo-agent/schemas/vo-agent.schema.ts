@@ -5,7 +5,9 @@ import { Document } from 'mongoose';
 export class VOAgent extends Document {
   @Prop({ required: true }) name: string;
   @Prop({ required: true }) language: string;
-  @Prop({ required: true }) style: string;
+  @Prop({ required: true }) style: string; // Voice style like Friendly, Professional, etc.
+  @Prop({ required: true }) voiceId: string; // ElevenLabs Voice ID
+
   @Prop() description: string;
   @Prop({ default: 'none' }) knowledgeBase: string;
   @Prop({ type: [String], default: [] }) knowledgeBaseData: string[];
