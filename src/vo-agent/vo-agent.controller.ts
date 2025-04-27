@@ -32,7 +32,7 @@ export class VoAgentController {
     return this.voAgentService.findAll();
   }
 
-  // ✨ Move this route ABOVE dynamic ID route
+  // ✨ Move BEFORE @Get(':id')
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async createWithFile(
@@ -47,12 +47,13 @@ export class VoAgentController {
     return this.voAgentService.create(createDto);
   }
 
-  // ✨ Added new /voice-style API
+  // ✨ Added /voice-style here BEFORE ":id"
   @Post('voice-style')
   async getVoiceStyles() {
     return this.voAgentService.getVoiceStylesAndVoices();
   }
 
+  // 🛑 This has to come at the end!
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.voAgentService.findOne(id);
