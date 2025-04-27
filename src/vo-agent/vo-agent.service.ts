@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Injectable,
   NotFoundException,
@@ -11,6 +14,7 @@ import { UpdateVOAgentDto } from './dto/update-vo-agent.dto';
 import { Express } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+import axios from 'axios'; // Added axios for calling Eleven Labs API
 
 @Injectable()
 export class VoAgentService {
@@ -18,6 +22,7 @@ export class VoAgentService {
     @InjectModel(VOAgent.name, 'mainConnection')
     private readonly voAgentModel: Model<VOAgent>,
   ) {}
+
   async processKnowledgeFile(file: Express.Multer.File): Promise<{
     fileName: string;
     fileSize: number;
@@ -36,12 +41,12 @@ export class VoAgentService {
 
     await fs.promises.writeFile(savePath, file.buffer);
 
-    // For now, treat buffer as plain text. You can use `pdf-parse`, `mammoth`, etc. to enhance later.
     const parsedData = file.buffer
       .toString('utf-8')
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean);
+
     return {
       fileName,
       fileSize: file.size,
@@ -50,6 +55,7 @@ export class VoAgentService {
       parsedData,
     };
   }
+
   async create(
     createDto: CreateVOAgentDto,
     file?: Express.Multer.File,
@@ -62,6 +68,7 @@ export class VoAgentService {
     const agent = new this.voAgentModel(createDto);
     return await agent.save();
   }
+
   async findAll(): Promise<VOAgent[]> {
     return await this.voAgentModel.find().exec();
   }
@@ -95,7 +102,7 @@ export class VoAgentService {
 
   async uploadKnowledgeFile(
     id: string,
-    file: unknown, // Accepts any type safely
+    file: unknown,
   ): Promise<{
     message: string;
     agentId: string;
@@ -105,18 +112,6 @@ export class VoAgentService {
     localPath: string;
   }> {
     const agent = await this.findOne(id);
-
-    // Type guard to ensure the file is a valid Express.Multer.File
-    if (
-      !file ||
-      typeof file !== 'object' ||
-      !('originalname' in file) ||
-      !('size' in file) ||
-      !('mimetype' in file) ||
-      !('buffer' in file)
-    ) {
-      throw new BadRequestException('Invalid file object');
-    }
 
     if (
       !file ||
@@ -130,28 +125,23 @@ export class VoAgentService {
     }
 
     const castedFile = file as Express.Multer.File;
-    const originalname: string = castedFile.originalname;
-    const size: number = castedFile.size;
-    const mimetype: string = castedFile.mimetype;
-    const buffer: Buffer = castedFile.buffer;
-
     const uploadDir = path.join(__dirname, '../../uploads');
     await fs.promises.mkdir(uploadDir, { recursive: true });
 
     const timestamp = Date.now();
-    const ext = path.extname(originalname);
-    const base = path.basename(originalname, ext);
+    const ext = path.extname(castedFile.originalname);
+    const base = path.basename(castedFile.originalname, ext);
     const fileName = `${base}-${timestamp}${ext}`;
     const savePath = path.join(uploadDir, fileName);
 
-    await fs.promises.writeFile(savePath, buffer);
+    await fs.promises.writeFile(savePath, castedFile.buffer);
 
     return {
       message: 'File uploaded and saved locally',
       agentId: String(agent._id),
       fileName,
-      fileSize: size,
-      mimeType: mimetype,
+      fileSize: castedFile.size,
+      mimeType: castedFile.mimetype,
       localPath: savePath,
     };
   }
@@ -174,6 +164,49 @@ export class VoAgentService {
       message: 'URL saved successfully',
       agentId: String(agent._id),
       url,
+    };
+  }
+
+  // ✅ NEW Functionality: Fetch Voice Styles + 11Labs Voices
+  async getVoiceStylesAndVoices(): Promise<{
+    voiceStyles: string[];
+    elevenLabsVoices: { id: string; name: string }[];
+  }> {
+    const voiceStyles = [
+      'Professional',
+      'Friendly',
+      'Casual',
+      'Formal',
+      'Enthusiastic',
+      'Serious',
+      'Empathic',
+    ];
+
+    const ELEVEN_LABS_API_KEY = process.env.ELEVEN_LABS_API_KEY; // Store your API Key in environment variables
+    const ELEVEN_LABS_VOICES_URL = 'https://api.elevenlabs.io/v1/voices';
+
+    let elevenLabsVoices = [];
+
+    if (ELEVEN_LABS_API_KEY) {
+      try {
+        const response = await axios.get(ELEVEN_LABS_VOICES_URL, {
+          headers: {
+            'xi-api-key': ELEVEN_LABS_API_KEY,
+          },
+        });
+
+        elevenLabsVoices = response.data.voices.map((voice) => ({
+          id: voice.voice_id,
+          name: voice.name,
+        }));
+      } catch (error) {
+        console.error('Error fetching ElevenLabs voices:', error.message);
+      }
+    }
+
+    return {
+      voiceStyles,
+      elevenLabsVoices,
     };
   }
 }
