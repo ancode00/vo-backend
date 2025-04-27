@@ -1,8 +1,15 @@
 export class CreateVOAgentDto {
   name: string;
-  language: string;
-  style: string; // Voice style: Professional, Friendly, Casual, etc.
-  voiceId?: string; // ✅ Made optional to avoid validation error during initial creation
+  languages: string[]; // ✅ Multiple languages
+  style:
+    | 'Professional'
+    | 'Friendly'
+    | 'Casual'
+    | 'Formal'
+    | 'Enthusiastic'
+    | 'Serious'
+    | 'Empathic'; // ✅ restricted to styles
+  voiceId: string; // ✅ Pick from ElevenLabs
 
   description?: string;
   knowledgeBase?: string;

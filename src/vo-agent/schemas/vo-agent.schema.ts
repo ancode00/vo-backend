@@ -4,10 +4,21 @@ import { Document } from 'mongoose';
 @Schema({ timestamps: true })
 export class VOAgent extends Document {
   @Prop({ required: true }) name: string;
-  @Prop({ required: true }) language: string;
-  @Prop({ required: true }) style: string; // Voice style like Friendly, Professional, etc.
-
-  @Prop({ required: false, default: '' }) voiceId: string; // ✅ Made optional with default empty
+  @Prop({ type: [String], required: true }) languages: string[]; // ✅ multiple languages
+  @Prop({
+    required: true,
+    enum: [
+      'Professional',
+      'Friendly',
+      'Casual',
+      'Formal',
+      'Enthusiastic',
+      'Serious',
+      'Empathic',
+    ],
+  })
+  style: string; // ✅ only allowed styles
+  @Prop({ required: true }) voiceId: string; // ✅ picked from 11Labs
 
   @Prop() description: string;
   @Prop({ default: 'none' }) knowledgeBase: string;
