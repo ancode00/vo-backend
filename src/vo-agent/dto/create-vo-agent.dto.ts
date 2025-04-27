@@ -2,7 +2,7 @@ export class CreateVOAgentDto {
   name: string;
   language: string;
   style: string; // Voice style: Professional, Friendly, Casual, etc.
-  voiceId: string; // ElevenLabs Voice ID: Rachel, Bella, etc.
+  voiceId?: string; // ✅ Made optional to avoid validation error during initial creation
 
   description?: string;
   knowledgeBase?: string;
