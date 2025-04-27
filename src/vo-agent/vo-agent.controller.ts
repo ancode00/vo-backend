@@ -32,7 +32,6 @@ export class VoAgentController {
     return this.voAgentService.findAll();
   }
 
-  // ✨ Move BEFORE @Get(':id')
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async createWithFile(
@@ -47,13 +46,18 @@ export class VoAgentController {
     return this.voAgentService.create(createDto);
   }
 
-  // ✨ Added /voice-style here BEFORE ":id"
+  // ✅ Route for Big Voice Config (voice styles + 11Labs)
   @Get('voice-config')
   async getVoiceConfig() {
     return this.voAgentService.getVoiceConfig();
   }
 
-  // 🛑 This has to come at the end!
+  // ✅ Route for Default Voice Config (your simple one)
+  @Get('default-voice-config')
+  getDefaultVoiceConfig() {
+    return this.voAgentService.getDefaultVoiceConfig();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.voAgentService.findOne(id);

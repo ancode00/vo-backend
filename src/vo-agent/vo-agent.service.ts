@@ -23,6 +23,15 @@ export class VoAgentService {
     private readonly voAgentModel: Model<VOAgent>,
   ) {}
 
+  // ✅ Your added method
+  getDefaultVoiceConfig() {
+    return {
+      voice: 'default',
+      language: 'en-US',
+      speed: 'normal',
+    };
+  }
+
   async processKnowledgeFile(file: Express.Multer.File): Promise<{
     fileName: string;
     fileSize: number;
@@ -167,7 +176,6 @@ export class VoAgentService {
     };
   }
 
-  // ✅ NEW Functionality: Fetch Voice Styles + 11Labs Voices
   async getVoiceStylesAndVoices(): Promise<{
     voiceStyles: string[];
     elevenLabsVoices: { id: string; name: string }[];
@@ -182,7 +190,7 @@ export class VoAgentService {
       'Empathic',
     ];
 
-    const ELEVEN_LABS_API_KEY = process.env.ELEVEN_LABS_API_KEY; // Store your API Key in environment variables
+    const ELEVEN_LABS_API_KEY = process.env.ELEVEN_LABS_API_KEY;
     const ELEVEN_LABS_VOICES_URL = 'https://api.elevenlabs.io/v1/voices';
 
     let elevenLabsVoices = [];
@@ -206,6 +214,67 @@ export class VoAgentService {
 
     return {
       voiceStyles,
+      elevenLabsVoices,
+    };
+  }
+
+  async getVoiceConfig(): Promise<{
+    voiceStyles: string[];
+    availableLanguages: string[];
+    elevenLabsVoices: { id: string; name: string }[];
+  }> {
+    const voiceStyles = [
+      'Professional',
+      'Friendly',
+      'Casual',
+      'Formal',
+      'Enthusiastic',
+      'Serious',
+      'Empathic',
+    ];
+
+    const availableLanguages = [
+      'English',
+      'Spanish',
+      'German',
+      'French',
+      'Italian',
+      'Portuguese',
+      'Hindi',
+      'Arabic',
+      'Chinese',
+      'Japanese',
+      'Korean',
+    ];
+
+    const ELEVEN_LABS_API_KEY: string | undefined =
+      process.env.ELEVEN_LABS_API_KEY;
+    const ELEVEN_LABS_VOICES_URL = 'https://api.elevenlabs.io/v1/voices';
+
+    let elevenLabsVoices: { id: string; name: string }[] = [];
+
+    if (ELEVEN_LABS_API_KEY) {
+      try {
+        const response = await axios.get<{
+          voices: { voice_id: string; name: string }[];
+        }>(ELEVEN_LABS_VOICES_URL, {
+          headers: { 'xi-api-key': ELEVEN_LABS_API_KEY },
+        });
+
+        if (Array.isArray(response.data?.voices)) {
+          elevenLabsVoices = response.data.voices.map((voice) => ({
+            id: voice.voice_id,
+            name: voice.name,
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching ElevenLabs voices:', error);
+      }
+    }
+
+    return {
+      voiceStyles,
+      availableLanguages,
       elevenLabsVoices,
     };
   }
