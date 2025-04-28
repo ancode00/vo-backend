@@ -88,6 +88,7 @@ export class VoAgentService {
       pauseTimeout: createDto.pauseTimeout,
       endCallPhrases: createDto.endCallPhrases,
       behavioralPrompt: createDto.behavioralPrompt,
+      systemPrompt: createDto.systemPrompt, // ✅ Added here
     });
 
     return await agent.save();
