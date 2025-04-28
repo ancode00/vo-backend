@@ -1,6 +1,7 @@
 export class CreateVOAgentDto {
   name: string;
-  languages: string[];
+  languages: string[]; // ✅ Accepts multiple languages now
+
   style:
     | 'Professional'
     | 'Friendly'
@@ -8,8 +9,9 @@ export class CreateVOAgentDto {
     | 'Formal'
     | 'Enthusiastic'
     | 'Serious'
-    | 'Empathic';
-  voiceId: string;
+    | 'Empathic'; // ✅ Voice style choice
+
+  voiceId: string; // ✅ ElevenLabs voice ID
 
   description?: string;
   knowledgeBase?: string;
@@ -19,6 +21,7 @@ export class CreateVOAgentDto {
   pauseHandling?: string;
   pauseTimeout?: number;
   endCallPhrases?: string[];
-  systemPrompt?: string; // ✅ 🆕 New addition
-  behavioralPrompt?: string; // ✅ 🆕 New addition
+
+  systemPrompt?: string; // ✅ Added for system-level behavior instructions
+  behavioralPrompt?: string; // ✅ Added for user-facing behavior instructions
 }
