@@ -46,26 +46,37 @@ export class VoAgentController {
     return this.voAgentService.create(createDto);
   }
 
-  // ✅ Fetch dynamic voice config (11Labs styles, languages, voices)
+  // ✅ Fetch dynamic voice config (from ElevenLabs)
   @Get('voice-config')
   async getVoiceConfig() {
     return this.voAgentService.getVoiceConfig();
   }
 
-  // ✅ Fetch default fallback voice config (local static)
+  // ✅ Fetch default fallback voice config
   @Get('default-voice-config')
   getDefaultVoiceConfig() {
     return this.voAgentService.getDefaultVoiceConfig();
   }
 
-  // ✅ Clone user's voice (upload sample audio and create new voice)
+  // ✅ Clone voice from uploaded audio
   @Post('clone-voice')
   @UseInterceptors(FileInterceptor('file'))
   async cloneVoice(
     @UploadedFile() file: Express.Multer.File,
-    @Body('name') name: string, // Grab voice name from body
+    @Body('name') name: string,
   ) {
     return this.voAgentService.cloneVoice(file, name);
+  }
+
+  // ✅ Record voice and upload+clone in a single API
+  @Post('record-and-clone')
+  @UseInterceptors(FileInterceptor('file'))
+  async recordAndCloneVoice(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('name') name: string,
+  ) {
+    return this.voAgentService.cloneVoice(file, name);
+    // 👈 Use the same cloneVoice() internally — no code duplication needed
   }
 
   @Get(':id')
