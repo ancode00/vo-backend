@@ -19,6 +19,6 @@ export class CreateVOAgentDto {
   pauseHandling?: string;
   pauseTimeout?: number;
   endCallPhrases?: string[];
-
+  systemPrompt?: string; // ✅ 🆕 New addition
   behavioralPrompt?: string; // ✅ 🆕 New addition
 }
