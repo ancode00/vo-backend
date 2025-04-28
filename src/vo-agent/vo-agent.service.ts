@@ -15,6 +15,7 @@ import { Express } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios'; // Added axios for calling Eleven Labs API
+import * as FormData from 'form-data'; // ✅ Needed for voice clone upload
 
 @Injectable()
 export class VoAgentService {
@@ -23,7 +24,6 @@ export class VoAgentService {
     private readonly voAgentModel: Model<VOAgent>,
   ) {}
 
-  // ✅ Your added method
   getDefaultVoiceConfig() {
     return {
       voice: 'default',
@@ -277,5 +277,48 @@ export class VoAgentService {
       availableLanguages,
       elevenLabsVoices,
     };
+  }
+
+  // ✅ New method: Clone user's voice
+  async cloneVoice(
+    file: Express.Multer.File,
+    name: string,
+  ): Promise<{
+    message: string;
+    voiceId?: string;
+  }> {
+    const ELEVEN_LABS_API_KEY = process.env.ELEVEN_LABS_API_KEY;
+    const ELEVEN_LABS_CLONE_URL = 'https://api.elevenlabs.io/v1/voices/add';
+
+    if (!ELEVEN_LABS_API_KEY) {
+      throw new BadRequestException('ElevenLabs API Key missing');
+    }
+
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('files', file.buffer, {
+      filename: file.originalname,
+      contentType: file.mimetype,
+    });
+
+    try {
+      const response = await axios.post(ELEVEN_LABS_CLONE_URL, formData, {
+        headers: {
+          ...formData.getHeaders(),
+          'xi-api-key': ELEVEN_LABS_API_KEY,
+        },
+      });
+
+      return {
+        message: 'Voice cloned successfully',
+        voiceId: response.data.voice_id,
+      };
+    } catch (error) {
+      console.error(
+        'Error cloning voice:',
+        error.response?.data || error.message,
+      );
+      throw new BadRequestException('Voice cloning failed');
+    }
   }
 }

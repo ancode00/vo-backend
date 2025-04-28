@@ -46,16 +46,26 @@ export class VoAgentController {
     return this.voAgentService.create(createDto);
   }
 
-  // ✅ Route for Big Voice Config (voice styles + 11Labs)
+  // ✅ Fetch dynamic voice config (11Labs styles, languages, voices)
   @Get('voice-config')
   async getVoiceConfig() {
     return this.voAgentService.getVoiceConfig();
   }
 
-  // ✅ Route for Default Voice Config (your simple one)
+  // ✅ Fetch default fallback voice config (local static)
   @Get('default-voice-config')
   getDefaultVoiceConfig() {
     return this.voAgentService.getDefaultVoiceConfig();
+  }
+
+  // ✅ Clone user's voice (upload sample audio and create new voice)
+  @Post('clone-voice')
+  @UseInterceptors(FileInterceptor('file'))
+  async cloneVoice(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('name') name: string, // Grab voice name from body
+  ) {
+    return this.voAgentService.cloneVoice(file, name);
   }
 
   @Get(':id')
