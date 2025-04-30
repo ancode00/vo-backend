@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import axios, { AxiosResponse } from 'axios';
-import FormData from 'form-data';
+import axios, { AxiosError } from 'axios';
 
-interface ElevenLabsResponse {
+interface ElevenLabsTranscriptionResponse {
   text: string;
 }
 
@@ -10,34 +9,30 @@ interface ElevenLabsResponse {
 export class TranscribeService {
   async transcribeFromUrl(url: string): Promise<string> {
     try {
-      // Step 1: Download the audio file from the URL
-      const audioResponse: AxiosResponse<ArrayBuffer> = await axios.get(url, {
+      const audioResponse = await axios.get<ArrayBuffer>(url, {
         responseType: 'arraybuffer',
       });
 
-      // Step 2: Create form-data and append the .wav file
-      const form = new FormData();
-      form.append('file', Buffer.from(audioResponse.data), {
-        filename: 'audio.wav',
-        contentType: 'audio/wav',
-      });
-
-      // Step 3: Send the request to ElevenLabs
-      const response: AxiosResponse<ElevenLabsResponse> = await axios.post(
-        'https://api.elevenlabs.io/v1/speech-to-text/convert',
-        form,
+      const sttResponse = await axios.post<ElevenLabsTranscriptionResponse>(
+        'https://api.elevenlabs.io/v1/speech-to-text',
+        audioResponse.data,
         {
           headers: {
-            ...form.getHeaders(),
+            'Content-Type': 'audio/wav',
             'xi-api-key': process.env.ELEVENLABS_API_KEY ?? '',
           },
         },
       );
 
-      return response.data.text;
-    } catch (err: unknown) {
-      const error = err as Error;
-      console.error('[Transcription Error]', error.message);
+      return sttResponse.data.text;
+    } catch (err) {
+      const error = err as AxiosError;
+      const errorMsg =
+        error.response && typeof error.response.data === 'string'
+          ? error.response.data
+          : error.message;
+
+      console.error('[Transcription Error]', errorMsg);
       return '';
     }
   }
