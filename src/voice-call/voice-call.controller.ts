@@ -39,7 +39,13 @@ export class VoiceCallController {
     return this.voiceCallService.updateStatus(id, updateDto);
   }
 
-  // ✅ New route: PATCH /voice-calls/:id/transcribe
+  // ✅ PATCH to update any field like recordingUrl
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateDto: UpdateVoiceCallDto) {
+    return this.voiceCallService.update(id, updateDto);
+  }
+
+  // ✅ PATCH /voice-calls/:id/transcribe to manually transcribe
   @Patch(':id/transcribe')
   async manualTranscription(@Param('id') id: string) {
     const call = await this.voiceCallService.transcribeCall(id);
