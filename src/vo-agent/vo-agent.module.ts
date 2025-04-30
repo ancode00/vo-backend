@@ -6,10 +6,7 @@ import { VoAgentService } from './vo-agent.service';
 
 @Module({
   imports: [
-    MongooseModule.forFeature(
-      [{ name: VOAgent.name, schema: VOAgentSchema }],
-      'mainConnection', // <-- this line is CRITICAL
-    ),
+    MongooseModule.forFeature([{ name: VOAgent.name, schema: VOAgentSchema }]),
   ],
   controllers: [VoAgentController],
   providers: [VoAgentService],
