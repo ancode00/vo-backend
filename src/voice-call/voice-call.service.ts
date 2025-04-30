@@ -1,69 +1,70 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { VoiceCall } from './voice-call.schema';
-import { CreateVoiceCallDto } from './dto/create-voice-call.dto';
-import { UpdateVoiceCallDto } from './dto/update-voice-call.dto';
-import { TranscribeService } from './transcribe.service';
+import axios, { AxiosError, AxiosResponse } from 'axios';
+import * as fs from 'fs';
+import * as FormData from 'form-data';
+import * as path from 'path';
+import { Injectable, Logger } from '@nestjs/common';
+import { v4 as uuid } from 'uuid';
+
+interface TranscriptionResponse {
+  text: string;
+}
 
 @Injectable()
-export class VoiceCallService {
-  constructor(
-    @InjectModel(VoiceCall.name)
-    private readonly voiceCallModel: Model<VoiceCall>,
-    private readonly transcribeService: TranscribeService,
-  ) {}
+export class TranscribeService {
+  private readonly logger = new Logger(TranscribeService.name);
 
-  async create(dto: CreateVoiceCallDto) {
-    const voiceCall = await this.voiceCallModel.create(dto);
-
-    if (dto.recordingUrl) {
-      const transcript = await this.transcribeService.transcribeFromUrl(
-        dto.recordingUrl,
+  async transcribeFromUrl(url: string): Promise<string> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const tempFile = path.join('/tmp', `temp-${uuid()}.wav`);
+    try {
+      // Download file with response type stream
+      const response: AxiosResponse<NodeJS.ReadableStream> = await axios.get(
+        url,
+        {
+          responseType: 'stream',
+        },
       );
-      voiceCall.transcript = transcript;
-      await voiceCall.save();
+
+      // Save stream to file
+      await new Promise<void>((resolve, reject) => {
+        const writer = fs.createWriteStream(tempFile);
+        response.data.pipe(writer);
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+      });
+
+      // Transcribe downloaded file
+      return await this.transcribeLocalFile(tempFile);
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      const errorMessage =
+        error?.response?.data?.message || error?.message || 'Unknown error';
+      this.logger.error('Transcribe from URL failed', errorMessage);
+      throw new Error('Failed to transcribe from URL: ' + errorMessage);
+    } finally {
+      // Clean up temp file
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+      }
     }
-
-    return voiceCall;
   }
 
-  findAll() {
-    return this.voiceCallModel.find().exec();
-  }
+  async transcribeLocalFile(filePath: string): Promise<string> {
+    const form = new FormData();
+    form.append('model_id', 'scribe_v1');
+    form.append('file', fs.createReadStream(filePath));
 
-  findOne(id: string) {
-    return this.voiceCallModel.findById(id).exec();
-  }
-
-  update(id: string, dto: UpdateVoiceCallDto) {
-    return this.voiceCallModel.findByIdAndUpdate(id, dto, { new: true }).exec();
-  }
-
-  remove(id: string) {
-    return this.voiceCallModel.findByIdAndDelete(id).exec();
-  }
-
-  findByStatus(status: string) {
-    return this.voiceCallModel.find({ status }).exec();
-  }
-
-  updateStatus(id: string, dto: Partial<{ status: string }>) {
-    return this.voiceCallModel
-      .findByIdAndUpdate(id, { status: dto.status }, { new: true })
-      .exec();
-  }
-
-  async transcribeCall(id: string) {
-    const call = await this.voiceCallModel.findById(id);
-    if (!call || !call.recordingUrl) return null;
-
-    const transcript = await this.transcribeService.transcribeFromUrl(
-      call.recordingUrl,
+    const response: AxiosResponse<TranscriptionResponse> = await axios.post(
+      'https://api.elevenlabs.io/v1/speech-to-text',
+      form,
+      {
+        headers: {
+          'xi-api-key': 'sk_976f8b17e8f8841ef12a663b243e23620faf295b00cca28e',
+          ...form.getHeaders(),
+        },
+      },
     );
-    call.transcript = transcript;
-    await call.save();
 
-    return call;
+    return response.data.text;
   }
 }
