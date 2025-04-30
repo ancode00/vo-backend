@@ -31,4 +31,13 @@ export class VoiceCallService {
   remove(id: string) {
     return this.voiceCallModel.findByIdAndDelete(id).exec();
   }
+  findByStatus(status: string) {
+    return this.voiceCallModel.find({ status }).exec();
+  }
+
+  updateStatus(id: string, dto: Partial<{ status: string }>) {
+    return this.voiceCallModel
+      .findByIdAndUpdate(id, { status: dto.status }, { new: true })
+      .exec();
+  }
 }
