@@ -4,20 +4,19 @@ import { Model } from 'mongoose';
 import { VoiceCall } from './voice-call.schema';
 import { CreateVoiceCallDto } from './dto/create-voice-call.dto';
 import { UpdateVoiceCallDto } from './dto/update-voice-call.dto';
-import { TranscribeService } from './transcribe.service'; // ✅ import
+import { TranscribeService } from './transcribe.service';
 
 @Injectable()
 export class VoiceCallService {
   constructor(
     @InjectModel(VoiceCall.name)
     private readonly voiceCallModel: Model<VoiceCall>,
-    private readonly transcribeService: TranscribeService, // ✅ inject
+    private readonly transcribeService: TranscribeService,
   ) {}
 
   async create(dto: CreateVoiceCallDto) {
     const voiceCall = await this.voiceCallModel.create(dto);
 
-    // ✅ Auto-transcribe if recordingUrl is present
     if (dto.recordingUrl) {
       const transcript = await this.transcribeService.transcribeFromUrl(
         dto.recordingUrl,
@@ -53,5 +52,18 @@ export class VoiceCallService {
     return this.voiceCallModel
       .findByIdAndUpdate(id, { status: dto.status }, { new: true })
       .exec();
+  }
+
+  async transcribeCall(id: string) {
+    const call = await this.voiceCallModel.findById(id);
+    if (!call || !call.recordingUrl) return null;
+
+    const transcript = await this.transcribeService.transcribeFromUrl(
+      call.recordingUrl,
+    );
+    call.transcript = transcript;
+    await call.save();
+
+    return call;
   }
 }
