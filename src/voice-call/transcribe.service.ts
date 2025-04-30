@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
-import * as FormData from 'form-data';
-import * as path from 'path';
+import FormData from 'form-data';
 
-interface ElevenLabsTranscriptionResponse {
+interface ElevenLabsResponse {
   text: string;
 }
 
@@ -11,43 +10,34 @@ interface ElevenLabsTranscriptionResponse {
 export class TranscribeService {
   async transcribeFromUrl(url: string): Promise<string> {
     try {
-      // 1. Download audio file
+      // Step 1: Download the audio file from the URL
       const audioResponse: AxiosResponse<ArrayBuffer> = await axios.get(url, {
         responseType: 'arraybuffer',
       });
 
-      // 2. Prepare multipart form
-      const formData = new FormData();
-      formData.append('file', Buffer.from(audioResponse.data), {
-        filename: path.basename(url) || 'audio.mp3',
-        contentType: 'audio/mpeg',
+      // Step 2: Create form-data and append the .wav file
+      const form = new FormData();
+      form.append('file', Buffer.from(audioResponse.data), {
+        filename: 'audio.wav',
+        contentType: 'audio/wav',
       });
-      formData.append('model_id', 'whisper-1'); // or 'scribe-v1' if applicable
-      formData.append('language', 'en'); // optional
-      formData.append('output_format', 'json'); // required
 
-      // 3. Send transcription request
-      const elevenRes = await axios.post<ElevenLabsTranscriptionResponse>(
-        'https://api.elevenlabs.io/v1/speech-to-text/convert', // ✅ CORRECT ENDPOINT
-        formData,
+      // Step 3: Send the request to ElevenLabs
+      const response: AxiosResponse<ElevenLabsResponse> = await axios.post(
+        'https://api.elevenlabs.io/v1/speech-to-text/convert',
+        form,
         {
           headers: {
-            ...formData.getHeaders(),
-            'xi-api-key': process.env.ELEVENLABS_API_KEY!,
+            ...form.getHeaders(),
+            'xi-api-key': process.env.ELEVENLABS_API_KEY ?? '',
           },
         },
       );
 
-      return elevenRes.data.text;
+      return response.data.text;
     } catch (err: unknown) {
-      const error = err as {
-        response?: { data?: unknown };
-        message?: string;
-      };
-      console.error(
-        '[Transcription Error]',
-        error.response?.data || error.message,
-      );
+      const error = err as Error;
+      console.error('[Transcription Error]', error.message);
       return '';
     }
   }
