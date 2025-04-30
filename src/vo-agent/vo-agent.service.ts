@@ -19,7 +19,7 @@ import * as FormData from 'form-data';
 @Injectable()
 export class VoAgentService {
   constructor(
-    @InjectModel(VOAgent.name, 'mainConnection')
+    @InjectModel(VOAgent.name)
     private readonly voAgentModel: Model<VOAgent>,
   ) {}
 
