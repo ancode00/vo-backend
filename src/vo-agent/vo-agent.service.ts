@@ -88,7 +88,7 @@ export class VoAgentService {
       pauseTimeout: createDto.pauseTimeout,
       endCallPhrases: createDto.endCallPhrases,
       behavioralPrompt: createDto.behavioralPrompt,
-      systemPrompt: createDto.systemPrompt, // ✅ Added here
+      systemPrompt: createDto.systemPrompt,
     });
 
     return await agent.save();
@@ -248,29 +248,24 @@ export class VoAgentService {
       'Empathic',
     ];
 
-    const availableLanguages = [
-      'English',
-      'Spanish',
-      'German',
-      'French',
-      'Italian',
-      'Portuguese',
-      'Hindi',
-      'Arabic',
-      'Chinese',
-      'Japanese',
-      'Korean',
-    ];
-
     const ELEVEN_LABS_API_KEY = process.env.ELEVEN_LABS_API_KEY;
     const ELEVEN_LABS_VOICES_URL = 'https://api.elevenlabs.io/v1/voices';
 
-    let elevenLabsVoices: { id: string; name: string }[] = [];
+    let elevenLabsVoices: {
+      id: string;
+      name: string;
+      labels?: { language?: string };
+    }[] = [];
+    let availableLanguages: string[] = [];
 
     if (ELEVEN_LABS_API_KEY) {
       try {
         const response = await axios.get<{
-          voices: { voice_id: string; name: string }[];
+          voices: {
+            voice_id: string;
+            name: string;
+            labels?: { language?: string };
+          }[];
         }>(ELEVEN_LABS_VOICES_URL, {
           headers: { 'xi-api-key': ELEVEN_LABS_API_KEY },
         });
@@ -278,7 +273,16 @@ export class VoAgentService {
         elevenLabsVoices = response.data.voices.map((voice) => ({
           id: voice.voice_id,
           name: voice.name,
+          labels: voice.labels,
         }));
+
+        availableLanguages = [
+          ...new Set(
+            response.data.voices
+              .map((voice) => voice.labels?.language)
+              .filter((lang): lang is string => !!lang),
+          ),
+        ];
       } catch (error) {
         console.error('Error fetching ElevenLabs voices:', error.message);
       }
@@ -287,7 +291,7 @@ export class VoAgentService {
     return {
       voiceStyles,
       availableLanguages,
-      elevenLabsVoices,
+      elevenLabsVoices: elevenLabsVoices.map(({ id, name }) => ({ id, name })),
     };
   }
 

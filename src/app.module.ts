@@ -1,15 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
-import { VoAgentModule } from './vo-agent/vo-agent.module';
-
+import { VoiceCallModule } from './voice-call.module';
 @Module({
   imports: [
-    ConfigModule.forRoot(),
-    MongooseModule.forRoot(process.env.MONGO_URI as string, {
-      connectionName: 'mainConnection',
-    }),
-    VoAgentModule,
+    VoiceCallModule, // 👈 add this line
   ],
 })
 export class AppModule {}
