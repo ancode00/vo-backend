@@ -3,7 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { VoiceCall, VoiceCallSchema } from './voice-call.schema';
 import { VoiceCallService } from './voice-call.service';
 import { VoiceCallController } from './voice-call.controller';
-import { TranscribeService } from './transcribe.service'; // ✅ newly added
+import { TranscribeService } from './transcribe.service';
 
 @Module({
   imports: [
@@ -12,6 +12,7 @@ import { TranscribeService } from './transcribe.service'; // ✅ newly added
     ]),
   ],
   controllers: [VoiceCallController],
-  providers: [VoiceCallService, TranscribeService], // ✅ registered TranscribeService
+  providers: [VoiceCallService, TranscribeService],
+  exports: [VoiceCallService], // Optional: Export if needed by other modules
 })
 export class VoiceCallModule {}
