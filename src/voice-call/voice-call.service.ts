@@ -8,7 +8,7 @@ import { UpdateVoiceCallDto } from './dto/update-voice-call.dto';
 @Injectable()
 export class VoiceCallService {
   constructor(
-    @InjectModel(VoiceCall.name) // ✅ Default Mongoose connection
+    @InjectModel(VoiceCall.name)
     private readonly voiceCallModel: Model<VoiceCall>,
   ) {}
 
