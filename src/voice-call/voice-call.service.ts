@@ -4,16 +4,29 @@ import { Model } from 'mongoose';
 import { VoiceCall } from './voice-call.schema';
 import { CreateVoiceCallDto } from './dto/create-voice-call.dto';
 import { UpdateVoiceCallDto } from './dto/update-voice-call.dto';
+import { TranscribeService } from './transcribe.service'; // ✅ import
 
 @Injectable()
 export class VoiceCallService {
   constructor(
     @InjectModel(VoiceCall.name)
     private readonly voiceCallModel: Model<VoiceCall>,
+    private readonly transcribeService: TranscribeService, // ✅ inject
   ) {}
 
-  create(dto: CreateVoiceCallDto) {
-    return this.voiceCallModel.create(dto);
+  async create(dto: CreateVoiceCallDto) {
+    const voiceCall = await this.voiceCallModel.create(dto);
+
+    // ✅ Auto-transcribe if recordingUrl is present
+    if (dto.recordingUrl) {
+      const transcript = await this.transcribeService.transcribeFromUrl(
+        dto.recordingUrl,
+      );
+      voiceCall.transcript = transcript;
+      await voiceCall.save();
+    }
+
+    return voiceCall;
   }
 
   findAll() {
@@ -31,6 +44,7 @@ export class VoiceCallService {
   remove(id: string) {
     return this.voiceCallModel.findByIdAndDelete(id).exec();
   }
+
   findByStatus(status: string) {
     return this.voiceCallModel.find({ status }).exec();
   }

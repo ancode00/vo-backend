@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Param, Body, Query, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Query,
+  Put,
+  Patch,
+} from '@nestjs/common';
 import { VoiceCallService } from './voice-call.service';
 import { CreateVoiceCallDto } from './dto/create-voice-call.dto';
 import { UpdateVoiceCallDto } from './dto/update-voice-call.dto';
@@ -28,5 +37,17 @@ export class VoiceCallController {
   @Put(':id/update-status')
   updateStatus(@Param('id') id: string, @Body() updateDto: UpdateVoiceCallDto) {
     return this.voiceCallService.updateStatus(id, updateDto);
+  }
+
+  // ✅ New route: PATCH /voice-calls/:id/transcribe
+  @Patch(':id/transcribe')
+  async manualTranscription(@Param('id') id: string) {
+    const call = await this.voiceCallService.transcribeCall(id);
+    return {
+      message: call
+        ? 'Transcript updated'
+        : 'Call not found or no recordingUrl',
+      transcript: call?.transcript || null,
+    };
   }
 }
