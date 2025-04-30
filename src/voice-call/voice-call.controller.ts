@@ -39,32 +39,24 @@ export class VoiceCallController {
     return this.voiceCallService.updateStatus(id, updateDto);
   }
 
-  // ✅ PATCH /voice-calls/:id to update fields like recordingUrl, etc.
+  // ✅ Combined PATCH: updates fields + triggers transcription if needed
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDto: UpdateVoiceCallDto) {
-    return this.voiceCallService.update(id, updateDto);
-  }
-
-  // ✅ PATCH /voice-calls/:id/transcribe to update + transcribe in one go
-  @Patch(':id/transcribe')
-  async updateAndTranscribe(
+  async updateAndMaybeTranscribe(
     @Param('id') id: string,
-    @Body() updateDto: Partial<UpdateVoiceCallDto>,
+    @Body() updateDto: UpdateVoiceCallDto,
   ) {
     const updatedCall = await this.voiceCallService.update(id, updateDto);
 
-    if (!updatedCall || !updatedCall.recordingUrl) {
-      return {
-        message: 'Call not found or missing recordingUrl',
-        transcript: null,
-      };
+    let transcript: string | null = null;
+    if (updateDto.recordingUrl) {
+      const callWithTranscript = await this.voiceCallService.transcribeCall(id);
+      transcript = callWithTranscript?.transcript || null;
     }
 
-    const transcribedCall = await this.voiceCallService.transcribeCall(id);
-
     return {
-      message: transcribedCall ? 'Transcript updated' : 'Transcription failed',
-      transcript: transcribedCall?.transcript || null,
+      message: 'Call updated successfully',
+      transcript,
+      call: updatedCall,
     };
   }
 }
