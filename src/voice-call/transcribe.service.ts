@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
 import * as FormData from 'form-data';
+import * as path from 'path';
 
 interface ElevenLabsTranscriptionResponse {
   text: string;
@@ -10,31 +11,32 @@ interface ElevenLabsTranscriptionResponse {
 export class TranscribeService {
   async transcribeFromUrl(url: string): Promise<string> {
     try {
-      // Step 1: Download audio from URL
+      // 1. Download audio file
       const audioResponse: AxiosResponse<ArrayBuffer> = await axios.get(url, {
         responseType: 'arraybuffer',
       });
 
-      // Step 2: Prepare multipart/form-data
+      // 2. Prepare multipart form
       const formData = new FormData();
       formData.append('file', Buffer.from(audioResponse.data), {
-        filename: 'audio.mp3',
+        filename: path.basename(url) || 'audio.mp3',
         contentType: 'audio/mpeg',
       });
-      formData.append('model_id', 'scribe-v1');
+      formData.append('model_id', 'whisper-1'); // or 'scribe-v1' if applicable
+      formData.append('language', 'en'); // optional
+      formData.append('output_format', 'json'); // required
 
-      // Step 3: POST to ElevenLabs API
-      const elevenRes: AxiosResponse<ElevenLabsTranscriptionResponse> =
-        await axios.post(
-          'https://api.elevenlabs.io/v1/speech-to-text',
-          formData,
-          {
-            headers: {
-              ...formData.getHeaders(),
-              'xi-api-key': process.env.ELEVENLABS_API_KEY!,
-            },
+      // 3. Send transcription request
+      const elevenRes = await axios.post<ElevenLabsTranscriptionResponse>(
+        'https://api.elevenlabs.io/v1/speech-to-text/convert', // ✅ CORRECT ENDPOINT
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+            'xi-api-key': process.env.ELEVENLABS_API_KEY!,
           },
-        );
+        },
+      );
 
       return elevenRes.data.text;
     } catch (err: unknown) {
@@ -42,7 +44,6 @@ export class TranscribeService {
         response?: { data?: unknown };
         message?: string;
       };
-
       console.error(
         '[Transcription Error]',
         error.response?.data || error.message,
