@@ -39,7 +39,6 @@ export class VoiceCallController {
     return this.voiceCallService.updateStatus(id, updateDto);
   }
 
-  // ✅ Combined PATCH: updates fields + triggers transcription if needed
   @Patch(':id')
   async updateAndMaybeTranscribe(
     @Param('id') id: string,
@@ -57,6 +56,17 @@ export class VoiceCallController {
       message: 'Call updated successfully',
       transcript,
       call: updatedCall,
+    };
+  }
+
+  @Patch(':id/transcribe')
+  async manualTranscription(@Param('id') id: string) {
+    const call = await this.voiceCallService.transcribeCall(id);
+    return {
+      message: call
+        ? 'Transcript updated'
+        : 'Call not found or no recordingUrl',
+      transcript: call?.transcript || null,
     };
   }
 }
