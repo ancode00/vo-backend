@@ -14,7 +14,6 @@ export class TranscribeService {
   private readonly logger = new Logger(TranscribeService.name);
 
   async transcribeFromUrl(url: string): Promise<string> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     const tempFile = path.join('/tmp', `temp-${uuid()}.wav`);
     try {
       // Download file with response type stream
