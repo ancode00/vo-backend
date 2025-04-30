@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 
 interface ElevenLabsTranscriptionResponse {
-  text: string;
+  text?: string;
 }
 
 @Injectable()
@@ -24,11 +24,25 @@ export class TranscribeService {
         },
       );
 
-      return elevenRes.data.text; // ✅ now it's strongly typed
+      // ✅ Log full response for debugging
+      console.log('[ElevenLabs Response]', elevenRes.data);
+
+      // ✅ Return fallback text if transcription is missing
+      return elevenRes.data.text || 'No transcription available.';
     } catch (err: unknown) {
-      const error = err as Error;
-      console.error('[Transcription Error]', error.message);
-      return '';
+      if (axios.isAxiosError(err)) {
+        console.error(
+          '[Transcription Error]',
+          err.response?.data || err.message,
+        );
+      } else if (err instanceof Error) {
+        console.error('[Transcription Error]', err.message);
+      } else {
+        console.error('[Transcription Error]', 'Unknown error occurred');
+      }
+      return 'Transcription failed.';
     }
+
+    return 'Transcription failed.';
   }
 }
