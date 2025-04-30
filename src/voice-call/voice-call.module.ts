@@ -6,10 +6,9 @@ import { VoiceCallController } from './voice-call.controller';
 
 @Module({
   imports: [
-    MongooseModule.forFeature(
-      [{ name: VoiceCall.name, schema: VoiceCallSchema }],
-      'mainConnection', // use your current DB connection
-    ),
+    MongooseModule.forFeature([
+      { name: VoiceCall.name, schema: VoiceCallSchema },
+    ]),
   ],
   controllers: [VoiceCallController],
   providers: [VoiceCallService],
