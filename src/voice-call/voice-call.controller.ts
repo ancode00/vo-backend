@@ -11,6 +11,7 @@ import {
 import { VoiceCallService } from './voice-call.service';
 import { CreateVoiceCallDto } from './dto/create-voice-call.dto';
 import { UpdateVoiceCallDto } from './dto/update-voice-call.dto';
+import { TranscriptData } from './voice-call.schema';
 
 @Controller('voice-calls')
 export class VoiceCallController {
@@ -23,10 +24,9 @@ export class VoiceCallController {
 
   @Get()
   findAll(@Query('status') status?: string) {
-    if (status) {
-      return this.voiceCallService.findByStatus(status);
-    }
-    return this.voiceCallService.findAll();
+    return status
+      ? this.voiceCallService.findByStatus(status)
+      : this.voiceCallService.findAll();
   }
 
   @Get(':id')
@@ -35,7 +35,10 @@ export class VoiceCallController {
   }
 
   @Put(':id/update-status')
-  updateStatus(@Param('id') id: string, @Body() updateDto: UpdateVoiceCallDto) {
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateDto: Partial<UpdateVoiceCallDto>,
+  ) {
     return this.voiceCallService.updateStatus(id, updateDto);
   }
 
@@ -46,10 +49,11 @@ export class VoiceCallController {
   ) {
     const updatedCall = await this.voiceCallService.update(id, updateDto);
 
-    let transcript: string | null = null;
+    let transcript: TranscriptData | null = null;
+
     if (updateDto.recordingUrl) {
       const callWithTranscript = await this.voiceCallService.transcribeCall(id);
-      transcript = callWithTranscript?.transcript || null;
+      transcript = callWithTranscript?.transcript ?? null;
     }
 
     return {
@@ -66,7 +70,13 @@ export class VoiceCallController {
       message: call
         ? 'Transcript updated'
         : 'Call not found or no recordingUrl',
-      transcript: call?.transcript || null,
+      transcript: call?.transcript ?? null,
     };
+  }
+
+  // ✅ INSIGHTS SUMMARY ENDPOINT
+  @Get('insights/summary')
+  async getCallSummary() {
+    return this.voiceCallService.getInsightsSummary();
   }
 }
