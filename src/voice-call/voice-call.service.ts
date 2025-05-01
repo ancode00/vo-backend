@@ -1,10 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { VoiceCall } from './voice-call.schema';
+import { VoiceCall, TranscriptData } from './voice-call.schema';
 import { CreateVoiceCallDto } from './dto/create-voice-call.dto';
 import { UpdateVoiceCallDto } from './dto/update-voice-call.dto';
-import { TranscribeService } from './transcribe.service';
+import { AssemblyService, AssemblyTranscript } from './assembly.service';
+import {
+  AiAnalysisService,
+  TranscriptInsights,
+} from '../ai-analysis/ai-analysis.service';
 import { AxiosError } from 'axios';
 
 @Injectable()
@@ -14,7 +18,8 @@ export class VoiceCallService {
   constructor(
     @InjectModel(VoiceCall.name)
     private readonly voiceCallModel: Model<VoiceCall>,
-    private readonly transcribeService: TranscribeService,
+    private readonly assemblyService: AssemblyService,
+    private readonly aiAnalysisService: AiAnalysisService,
   ) {}
 
   async create(dto: CreateVoiceCallDto): Promise<VoiceCall> {
@@ -22,10 +27,27 @@ export class VoiceCallService {
 
     if (dto.recordingUrl) {
       try {
-        const transcript = await this.transcribeService.transcribeFromUrl(
-          dto.recordingUrl,
-        );
-        voiceCall.transcript = transcript;
+        const result: AssemblyTranscript =
+          await this.assemblyService.transcribeAudio(dto.recordingUrl);
+
+        const fullTranscript: TranscriptData = {
+          summary: result.summary,
+          speakers: result.speakers,
+          silence: result.silence,
+          sentiment: result.sentiment,
+          crosstalk: result.crosstalk,
+        };
+
+        voiceCall.transcript = fullTranscript;
+
+        const fullText = result.speakers
+          .map((s) => `${s.speaker}: ${s.text}`)
+          .join('\n');
+
+        const insights: TranscriptInsights =
+          await this.aiAnalysisService.analyzeTranscript(fullText);
+        voiceCall.insights = insights;
+
         await voiceCall.save();
       } catch (err: unknown) {
         const error = err as AxiosError<{ message?: string }>;
@@ -69,10 +91,27 @@ export class VoiceCallService {
     if (!call || !call.recordingUrl) return null;
 
     try {
-      const transcript = await this.transcribeService.transcribeFromUrl(
-        call.recordingUrl,
-      );
-      call.transcript = transcript;
+      const result: AssemblyTranscript =
+        await this.assemblyService.transcribeAudio(call.recordingUrl);
+
+      const fullTranscript: TranscriptData = {
+        summary: result.summary,
+        speakers: result.speakers,
+        silence: result.silence,
+        sentiment: result.sentiment,
+        crosstalk: result.crosstalk,
+      };
+
+      call.transcript = fullTranscript;
+
+      const fullText = result.speakers
+        .map((s) => `${s.speaker}: ${s.text}`)
+        .join('\n');
+
+      const insights: TranscriptInsights =
+        await this.aiAnalysisService.analyzeTranscript(fullText);
+      call.insights = insights;
+
       await call.save();
     } catch (err: unknown) {
       const error = err as AxiosError<{ message?: string }>;
@@ -82,5 +121,27 @@ export class VoiceCallService {
     }
 
     return call;
+  }
+
+  async getInsightsSummary(): Promise<{
+    totalCalls: number;
+    escalatedCalls: number;
+    negativeCSAT: number;
+    vulnerableCustomers: number;
+  }> {
+    const [totalCalls, escalatedCalls, negativeCSAT, vulnerableCustomers] =
+      await Promise.all([
+        this.voiceCallModel.countDocuments(),
+        this.voiceCallModel.countDocuments({ 'insights.escalation': 'High' }),
+        this.voiceCallModel.countDocuments({ 'insights.csat': 'Negative' }),
+        this.voiceCallModel.countDocuments({ 'insights.vulnerable': true }),
+      ]);
+
+    return {
+      totalCalls,
+      escalatedCalls,
+      negativeCSAT,
+      vulnerableCustomers,
+    };
   }
 }
