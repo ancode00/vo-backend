@@ -68,13 +68,13 @@ export class VoiceCallController {
     const call = await this.voiceCallService.transcribeCall(id);
     return {
       message: call
-        ? 'Transcript updated'
+        ? `Transcript updated, status: ${call.status}`
         : 'Call not found or no recordingUrl',
       transcript: call?.transcript ?? null,
+      status: call?.status ?? null,
     };
   }
 
-  // ✅ INSIGHTS SUMMARY ENDPOINT
   @Get('insights/summary')
   async getCallSummary() {
     return this.voiceCallService.getInsightsSummary();

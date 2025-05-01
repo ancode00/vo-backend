@@ -32,7 +32,7 @@ export class VoiceCall extends Document {
   phoneNumber: string;
 
   @Prop({
-    enum: ['Live', 'Completed', 'Failed', 'Retried'],
+    enum: ['Live', 'Completed', 'Failed', 'Retried', 'Voicemail'], // ✅ added 'Voicemail'
     default: 'Live',
   })
   status: string;
@@ -51,6 +51,9 @@ export class VoiceCall extends Document {
 
   @Prop()
   duration: number;
+
+  @Prop() // ✅ optional but useful
+  endedAt?: Date;
 }
 
 export const VoiceCallSchema = SchemaFactory.createForClass(VoiceCall);
