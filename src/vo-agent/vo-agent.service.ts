@@ -226,7 +226,7 @@ export class VoAgentService {
           voices: {
             voice_id: string;
             name: string;
-            labels?: { language?: string; accent?: string };
+            labels?: { language?: string };
           }[];
         }>(ELEVEN_LABS_VOICES_URL, {
           headers: {
@@ -284,20 +284,57 @@ export class VoAgentService {
 
   private guessLanguageFromName(name: string): string {
     const lowered = name.toLowerCase();
-    if (lowered.includes('hindi') || lowered.includes('indian')) return 'hi';
-    if (lowered.includes('arabic') || lowered.includes('ar')) return 'ar';
-    if (lowered.includes('german')) return 'de';
-    if (lowered.includes('french')) return 'fr';
-    if (lowered.includes('spanish')) return 'es';
-    if (lowered.includes('english')) return 'en';
-    if (lowered.includes('japanese')) return 'ja';
-    if (lowered.includes('portuguese')) return 'pt';
-    if (lowered.includes('italian')) return 'it';
-    if (lowered.includes('korean')) return 'ko';
-    if (lowered.includes('dutch')) return 'nl';
-    if (lowered.includes('polish')) return 'pl';
-    if (lowered.includes('turkish')) return 'tr';
-    if (lowered.includes('swedish')) return 'sv';
+
+    const matchers: Record<string, string[]> = {
+      en: [
+        'english',
+        'roger',
+        'laura',
+        'george',
+        'callum',
+        'liam',
+        'will',
+        'charlotte',
+        'jessica',
+        'daniel',
+        'chris',
+        'brian',
+        'lily',
+        'bill',
+        'alice',
+        'matilda',
+      ],
+      hi: [
+        'hindi',
+        'indian',
+        'arvind',
+        'namita',
+        'nitya',
+        'raju',
+        'avani',
+        'monika',
+        'natasha',
+      ],
+      ar: ['arabic', 'aria', 'charlie', 'haytham'],
+      fr: ['french', 'celine'],
+      de: ['german', 'helga'],
+      es: ['spanish', 'sofia'],
+      it: ['italian'],
+      pt: ['portuguese'],
+      ja: ['japanese'],
+      ko: ['korean'],
+      nl: ['dutch'],
+      pl: ['polish'],
+      tr: ['turkish'],
+      sv: ['swedish'],
+    };
+
+    for (const [langCode, keywords] of Object.entries(matchers)) {
+      if (keywords.some((kw) => lowered.includes(kw))) {
+        return langCode;
+      }
+    }
+
     return 'unknown';
   }
 
