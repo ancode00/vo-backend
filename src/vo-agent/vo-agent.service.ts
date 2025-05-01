@@ -254,12 +254,33 @@ export class VoAgentService {
       }
     }
 
-    const availableLanguages = Array.from(
+    const detectedLanguages = Array.from(
       new Set(
         elevenLabsVoices
           .map((v) => v.language)
           .filter((lang) => lang && lang !== 'unknown'),
       ),
+    );
+
+    const masterLanguages = [
+      'en',
+      'hi',
+      'ar',
+      'fr',
+      'de',
+      'es',
+      'it',
+      'pt',
+      'ja',
+      'ko',
+      'nl',
+      'pl',
+      'tr',
+      'sv',
+    ];
+
+    const availableLanguages = Array.from(
+      new Set([...detectedLanguages, ...masterLanguages]),
     );
 
     const groupedByLanguage: Record<string, { id: string; name: string }[]> =
