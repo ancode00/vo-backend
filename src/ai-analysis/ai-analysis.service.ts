@@ -1,6 +1,5 @@
-// src/ai-analysis/ai-analysis.service.ts
 import { Injectable } from '@nestjs/common';
-import { Configuration, OpenAIApi } from 'openai';
+import OpenAI from 'openai';
 
 export type TranscriptInsights = {
   escalation: 'Low' | 'Medium' | 'High';
@@ -11,26 +10,24 @@ export type TranscriptInsights = {
 
 @Injectable()
 export class AiAnalysisService {
-  private readonly openai: OpenAIApi;
+  private readonly openai: OpenAI;
 
   constructor() {
-    const configuration = new Configuration({
+    this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
-
-    this.openai = new OpenAIApi(configuration);
   }
 
   async analyzeTranscript(transcript: string): Promise<TranscriptInsights> {
     const prompt = `
-You are an AI call quality auditor for a contact center.
+You are an expert QA bot reviewing customer support conversations.
 
-Here is the transcript of a call between an agent and a customer:
+Here is the call transcript:
 ---
 ${transcript}
 ---
 
-Analyze the conversation and return JSON in the following format:
+Analyze the conversation and return JSON like this:
 
 {
   "escalation": "Low" | "Medium" | "High",
@@ -39,16 +36,16 @@ Analyze the conversation and return JSON in the following format:
   "redFlags": ["..."]
 }
 
-Keep redFlags empty if none apply. Only return valid JSON.
-`;
+Strictly return only valid JSON. Do not add explanations or formatting.
+    `.trim();
 
-    const response = await this.openai.createChatCompletion({
+    const completion = await this.openai.chat.completions.create({
       model: 'gpt-4',
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.2,
+      temperature: 0.3,
     });
 
-    const raw = response.data.choices[0].message?.content ?? '{}';
+    const raw = completion.choices[0].message?.content || '{}';
     return JSON.parse(raw) as TranscriptInsights;
   }
 }

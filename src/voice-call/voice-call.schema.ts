@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-type SpeakerSegment = {
+export type SpeakerSegment = {
   text: string;
   speaker: string;
   start: number;
@@ -14,6 +14,13 @@ export type TranscriptData = {
   silence: any[];
   sentiment: any[];
   crosstalk: any[];
+};
+
+export type TranscriptInsights = {
+  escalation: 'Low' | 'Medium' | 'High';
+  csat: 'Positive' | 'Neutral' | 'Negative';
+  vulnerable: boolean;
+  redFlags: string[];
 };
 
 @Schema({ timestamps: true })
@@ -48,6 +55,9 @@ export class VoiceCall extends Document {
     default: null,
   })
   transcript: TranscriptData | null;
+
+  @Prop({ type: Object, default: null })
+  insights?: TranscriptInsights | null;
 
   @Prop()
   recordingUrl: string;
