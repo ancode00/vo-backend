@@ -235,12 +235,15 @@ export class VoAgentService {
         });
 
         elevenLabsVoices = response.data.voices.map((voice) => {
-          const lang = voice.labels?.language?.toLowerCase();
+          const labelLang = voice.labels?.language?.toLowerCase();
           const fallbackLang = this.guessLanguageFromName(voice.name);
+          const finalLang =
+            labelLang && labelLang !== 'unknown' ? labelLang : fallbackLang;
+
           return {
             id: voice.voice_id,
             name: voice.name,
-            language: lang && lang !== 'unknown' ? lang : fallbackLang,
+            language: finalLang,
           };
         });
       } catch (error) {
@@ -291,6 +294,10 @@ export class VoAgentService {
     if (lowered.includes('portuguese')) return 'pt';
     if (lowered.includes('italian')) return 'it';
     if (lowered.includes('korean')) return 'ko';
+    if (lowered.includes('dutch')) return 'nl';
+    if (lowered.includes('polish')) return 'pl';
+    if (lowered.includes('turkish')) return 'tr';
+    if (lowered.includes('swedish')) return 'sv';
     return 'unknown';
   }
 
