@@ -37,23 +37,7 @@ export class VoiceCall extends Document {
   })
   status: string;
 
-  @Prop({
-    type: {
-      summary: { type: String },
-      speakers: [
-        {
-          text: { type: String },
-          speaker: { type: String },
-          start: { type: Number },
-          end: { type: Number },
-        },
-      ],
-      silence: { type: [Object] },
-      sentiment: { type: [Object] },
-      crosstalk: { type: [Object] },
-    },
-    default: null,
-  })
+  @Prop({ type: Object, default: null })
   transcript: TranscriptData | null;
 
   @Prop({ type: Object, default: null })
