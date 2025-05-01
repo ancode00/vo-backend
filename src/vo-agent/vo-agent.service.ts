@@ -214,21 +214,6 @@ export class VoAgentService {
     const ELEVEN_LABS_API_KEY = process.env.ELEVEN_LABS_API_KEY;
     const ELEVEN_LABS_VOICES_URL = 'https://api.elevenlabs.io/v1/voices';
 
-    const guessLanguageFromName = (name: string): string => {
-      const lowered = name.toLowerCase();
-      if (lowered.includes('hindi') || lowered.includes('indian')) return 'hi';
-      if (lowered.includes('arabic') || lowered.includes('ar')) return 'ar';
-      if (lowered.includes('german')) return 'de';
-      if (lowered.includes('french')) return 'fr';
-      if (lowered.includes('spanish')) return 'es';
-      if (lowered.includes('english')) return 'en';
-      if (lowered.includes('japanese')) return 'ja';
-      if (lowered.includes('portuguese')) return 'pt';
-      if (lowered.includes('italian')) return 'it';
-      if (lowered.includes('korean')) return 'ko';
-      return 'unknown';
-    };
-
     let elevenLabsVoices: {
       id: string;
       name: string;
@@ -241,7 +226,7 @@ export class VoAgentService {
           voices: {
             voice_id: string;
             name: string;
-            labels?: { language?: string };
+            labels?: { language?: string; accent?: string };
           }[];
         }>(ELEVEN_LABS_VOICES_URL, {
           headers: {
@@ -250,12 +235,12 @@ export class VoAgentService {
         });
 
         elevenLabsVoices = response.data.voices.map((voice) => {
-          const detectedLang =
-            voice.labels?.language ?? guessLanguageFromName(voice.name);
+          const lang = voice.labels?.language?.toLowerCase();
+          const fallbackLang = this.guessLanguageFromName(voice.name);
           return {
             id: voice.voice_id,
             name: voice.name,
-            language: detectedLang,
+            language: lang && lang !== 'unknown' ? lang : fallbackLang,
           };
         });
       } catch (error) {
@@ -266,9 +251,13 @@ export class VoAgentService {
       }
     }
 
-    const availableLanguages = [
-      ...new Set(elevenLabsVoices.map((v) => v.language)),
-    ];
+    const availableLanguages = Array.from(
+      new Set(
+        elevenLabsVoices
+          .map((v) => v.language)
+          .filter((lang) => lang && lang !== 'unknown'),
+      ),
+    );
 
     const groupedByLanguage: Record<string, { id: string; name: string }[]> =
       {};
@@ -288,6 +277,21 @@ export class VoAgentService {
       elevenLabsVoices,
       groupedByLanguage,
     };
+  }
+
+  private guessLanguageFromName(name: string): string {
+    const lowered = name.toLowerCase();
+    if (lowered.includes('hindi') || lowered.includes('indian')) return 'hi';
+    if (lowered.includes('arabic') || lowered.includes('ar')) return 'ar';
+    if (lowered.includes('german')) return 'de';
+    if (lowered.includes('french')) return 'fr';
+    if (lowered.includes('spanish')) return 'es';
+    if (lowered.includes('english')) return 'en';
+    if (lowered.includes('japanese')) return 'ja';
+    if (lowered.includes('portuguese')) return 'pt';
+    if (lowered.includes('italian')) return 'it';
+    if (lowered.includes('korean')) return 'ko';
+    return 'unknown';
   }
 
   async cloneVoice(
@@ -332,5 +336,3 @@ export class VoAgentService {
     }
   }
 }
-// comments
-// returns
