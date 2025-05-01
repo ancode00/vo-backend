@@ -191,52 +191,15 @@ export class VoAgentService {
     };
   }
 
-  async getVoiceStylesAndVoices(): Promise<{
-    voiceStyles: string[];
-    elevenLabsVoices: { id: string; name: string }[];
-  }> {
-    const voiceStyles = [
-      'Professional',
-      'Friendly',
-      'Casual',
-      'Formal',
-      'Enthusiastic',
-      'Serious',
-      'Empathic',
-    ];
-
-    const ELEVEN_LABS_API_KEY = process.env.ELEVEN_LABS_API_KEY;
-    const ELEVEN_LABS_VOICES_URL = 'https://api.elevenlabs.io/v1/voices';
-
-    let elevenLabsVoices: { id: string; name: string }[] = [];
-
-    if (ELEVEN_LABS_API_KEY) {
-      try {
-        const response = await axios.get<{
-          voices: { voice_id: string; name: string }[];
-        }>(ELEVEN_LABS_VOICES_URL, {
-          headers: { 'xi-api-key': ELEVEN_LABS_API_KEY },
-        });
-
-        elevenLabsVoices = response.data.voices.map((voice) => ({
-          id: voice.voice_id,
-          name: voice.name,
-        }));
-      } catch (error) {
-        console.error('Error fetching ElevenLabs voices:', error.message);
-      }
-    }
-
-    return {
-      voiceStyles,
-      elevenLabsVoices,
-    };
-  }
-
   async getVoiceConfig(): Promise<{
     voiceStyles: string[];
     availableLanguages: string[];
-    elevenLabsVoices: { id: string; name: string }[];
+    elevenLabsVoices: {
+      id: string;
+      name: string;
+      language: string;
+    }[];
+    groupedByLanguage: Record<string, { id: string; name: string }[]>;
   }> {
     const voiceStyles = [
       'Professional',
@@ -250,13 +213,27 @@ export class VoAgentService {
 
     const ELEVEN_LABS_API_KEY = process.env.ELEVEN_LABS_API_KEY;
     const ELEVEN_LABS_VOICES_URL = 'https://api.elevenlabs.io/v1/voices';
+
+    const guessLanguageFromName = (name: string): string => {
+      const lowered = name.toLowerCase();
+      if (lowered.includes('hindi') || lowered.includes('indian')) return 'hi';
+      if (lowered.includes('arabic') || lowered.includes('ar')) return 'ar';
+      if (lowered.includes('german')) return 'de';
+      if (lowered.includes('french')) return 'fr';
+      if (lowered.includes('spanish')) return 'es';
+      if (lowered.includes('english')) return 'en';
+      if (lowered.includes('japanese')) return 'ja';
+      if (lowered.includes('portuguese')) return 'pt';
+      if (lowered.includes('italian')) return 'it';
+      if (lowered.includes('korean')) return 'ko';
+      return 'unknown';
+    };
 
     let elevenLabsVoices: {
       id: string;
       name: string;
-      labels?: { language?: string };
+      language: string;
     }[] = [];
-    let availableLanguages: string[] = [];
 
     if (ELEVEN_LABS_API_KEY) {
       try {
@@ -267,31 +244,49 @@ export class VoAgentService {
             labels?: { language?: string };
           }[];
         }>(ELEVEN_LABS_VOICES_URL, {
-          headers: { 'xi-api-key': ELEVEN_LABS_API_KEY },
+          headers: {
+            'xi-api-key': ELEVEN_LABS_API_KEY,
+          },
         });
 
-        elevenLabsVoices = response.data.voices.map((voice) => ({
-          id: voice.voice_id,
-          name: voice.name,
-          labels: voice.labels,
-        }));
-
-        availableLanguages = [
-          ...new Set(
-            response.data.voices
-              .map((voice) => voice.labels?.language)
-              .filter((lang): lang is string => !!lang),
-          ),
-        ];
+        elevenLabsVoices = response.data.voices.map((voice) => {
+          const detectedLang =
+            voice.labels?.language ?? guessLanguageFromName(voice.name);
+          return {
+            id: voice.voice_id,
+            name: voice.name,
+            language: detectedLang,
+          };
+        });
       } catch (error) {
-        console.error('Error fetching ElevenLabs voices:', error.message);
+        console.error(
+          'Error fetching ElevenLabs voices:',
+          error.response?.data || error.message,
+        );
       }
+    }
+
+    const availableLanguages = [
+      ...new Set(elevenLabsVoices.map((v) => v.language)),
+    ];
+
+    const groupedByLanguage: Record<string, { id: string; name: string }[]> =
+      {};
+    for (const voice of elevenLabsVoices) {
+      if (!groupedByLanguage[voice.language]) {
+        groupedByLanguage[voice.language] = [];
+      }
+      groupedByLanguage[voice.language].push({
+        id: voice.id,
+        name: voice.name,
+      });
     }
 
     return {
       voiceStyles,
       availableLanguages,
-      elevenLabsVoices: elevenLabsVoices.map(({ id, name }) => ({ id, name })),
+      elevenLabsVoices,
+      groupedByLanguage,
     };
   }
 
